@@ -428,45 +428,17 @@
 
             output.innerHTML = '<div class="loading">🌊 Generating three contradictory shock scenarios...</div>';
 
-            const prompt = `You are a deep-time resilience modeling system for SUST 720, a graduate sustainability design course at SCAD. Your role is to generate CONTRADICTORY, COMPOUND ecological shocks that will stress-test students' regenerative system designs.
-
-**INPUT:**
-Bioregion: ${bioregion}
-System Description: ${systemDescription}
-Stress-Test Horizon: ${horizon}
-
-**YOUR TASK:**
-Generate exactly THREE contradictory compound ecological shocks. Each shock must:
-1. Combine multiple biophysical stressors (NOT just one variable)
-2. Show non-linear cascade effects across centuries
-3. Contradict or tension the other two shocks (force design diversity)
-4. Be grounded in plausible climate science (students will verify against 2 peer-reviewed papers)
-5. Affect the system's core assumptions in different ways
-
-**OUTPUT FORMAT:**
-For each shock, provide a JSON object with:
-{
-  "shockNumber": 1 | 2 | 3,
-  "title": "A provocative, compound name (e.g., 'Permafrost-Acidification Cascade')",
-  "timeline": "When this begins and cascades (e.g., 'Year +80: permafrost thaw begins; Year +250: biome collapse accelerates')",
-  "coreShock": "The primary perturbation in 1-2 sentences",
-  "cascadeEffects": "How this triggers secondary shocks across the system (2-3 sentences)",
-  "affectedSystems": ["system1", "system2", "system3"],
-  "implications": "How this specifically challenges the student's system design (2 sentences)",
-  "severity": "CRITICAL | HIGH | MODERATE",
-  "verificationHint": "One or two keywords a student might search for peer-reviewed papers (e.g., 'permafrost carbon feedback', 'biome migration lag')"
-}
-
-Return ONLY a JSON array with three objects—no preamble, no markdown fences. Ensure the three shocks are genuinely contradictory and force the students to make hard design tradeoffs.`;
-
             try {
-                const sample = await claude.use("sample");
-                if (!sample) {
-                    output.innerHTML = '<div class="error">Unable to access AI capability. Please try again.</div>';
-                    return;
+                const response = await fetch('/api/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ bioregion, systemDescription, horizon })
+                });
+                const data = await response.json().catch(() => ({}));
+                if (!response.ok) {
+                    throw new Error(data.error || `Request failed (${response.status})`);
                 }
-
-                const result = await sample.json(prompt);
+                const result = data.shocks;
                 
                 queryCount++;
                 const remaining = MAX_QUERIES - queryCount;
@@ -476,8 +448,8 @@ Return ONLY a JSON array with three objects—no preamble, no markdown fences. E
                 // Log the query
                 const logEntry = {
                     timestamp: new Date().toLocaleString(),
-                    query: `${bioregion} | ${horizon}`,
-                    queryFull: systemDescription.substring(0, 100) + "..."
+                    query: esc(`${bioregion} | ${horizon}`),
+                    queryFull: esc(systemDescription.substring(0, 100)) + "..."
                 };
                 logEntries.unshift(logEntry);
                 updateLog();
@@ -499,7 +471,15 @@ Return ONLY a JSON array with three objects—no preamble, no markdown fences. E
             }
         }
 
+        function esc(value) {
+            return String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        }
+
         function renderShock(shock) {
+            shock = {
+                ...Object.fromEntries(Object.entries(shock).map(([k, v]) => [k, Array.isArray(v) ? v.map(esc) : esc(v)])),
+                affectedSystems: Array.isArray(shock.affectedSystems) ? shock.affectedSystems.map(esc) : []
+            };
             const severityColor = shock.severity === 'CRITICAL' ? '#d62828' : shock.severity === 'HIGH' ? '#f77f00' : '#06d6a0';
             
             return `
