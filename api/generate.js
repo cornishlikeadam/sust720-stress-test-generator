@@ -2,7 +2,7 @@
 // OpenCode Zen API. The API key stays on the server (OPENCODE_API_KEY env var).
 
 const ZEN_URL = 'https://opencode.ai/zen/v1/chat/completions';
-const DEFAULT_MODEL = 'big-pickle';
+const DEFAULT_MODEL = 'deepseek-v4-flash';
 const MAX_FIELD = 4000;
 
 function buildPrompt({ bioregion, systemDescription, horizon }) {

@@ -12,6 +12,6 @@ Here the page posts to `/api/generate`, a Vercel function that calls the
 | Name | Required | Default |
 | --- | --- | --- |
 | `OPENCODE_API_KEY` | yes | — |
-| `OPENCODE_MODEL` | no | `big-pickle` (any model on Zen's `/chat/completions` endpoint) |
+| `OPENCODE_MODEL` | no | `deepseek-v4-flash` (any paid model on Zen's `/chat/completions` endpoint; free models are blocked outside the OpenCode app) |
 
 Redeploy after changing them.
